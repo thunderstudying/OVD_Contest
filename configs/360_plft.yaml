@@ -1,0 +1,58 @@
+_BASE_: "Base-C2_L_R5021k_640b64_4x.yaml"
+MODEL:
+  WEIGHTS: "final/IF_+_E_s_T/model_0136444.pth"
+  DYNAMIC_CLASSIFIER: True
+  MASK_ON: False
+  ROI_BOX_HEAD:
+    USE_ZEROSHOT_CLS: True
+    IMAGE_LABEL_LOSS: 'max_score'
+    ZEROSHOT_WEIGHT_PATH: 'datasets/360/2_360_test_clip_a+cname_new.npy'
+    USE_FED_LOSS: False # Federated loss is enabled when DYNAMIC_CLASSIFIER is on
+    BBOX_REG_LOSS_TYPE: 'siou'  # head reg loss default:smooth_l1
+  BACKBONE:
+    NAME: build_swintransformer_fpn_backbone
+  SWIN:
+    SIZE: B-22k
+  FPN:
+    IN_FEATURES: ["swin1", "swin2", "swin3"]
+  ROI_HEADS:
+    NUM_CLASSES: 466
+    SCORE_THRESH_TEST: 0.0001
+  RESET_CLS_TESTS: True
+  TEST_CLASSIFIERS: ("datasets/360/2_360_test_clip_a+cname_new.npy",)
+  TEST_NUM_CLASSES: [466,]
+  DATASET_LOSS_WEIGHT: [1, 1, 1]
+SOLVER:
+  MAX_ITER: 45000  # bs 6
+  IMS_PER_BATCH: 32
+  BASE_LR: 0.0001
+  CHECKPOINT_PERIOD: 8493  # 14802+13428+22725=50955 img // 6 bs
+  WARMUP_ITERS: 1000
+  WARMUP_FACTOR: 0.001
+DATASETS:
+  TRAIN: ("360_final", '360_novel', '360_pl')
+DATALOADER:
+  DATASET_RATIO: [1, 1, 1]
+  DATASET_BS: [8, 8, 8]
+  DATASET_INPUT_SIZE: [896, 896, 896]
+  USE_RFS: [True, False, False]
+  DATASET_INPUT_SCALE: [[0.1, 2.0], [0.5, 1.5], [0.5, 2]]
+  FILTER_EMPTY_ANNOTATIONS: False
+  NUM_WORKERS: 4
+  SAMPLER_TRAIN: "MultiDatasetSampler"
+  MULTI_DATASET_GROUPING: True
+  DATASET_ANN: ['box', 'image', 'box']
+  USE_DIFF_BS_SIZE: True
+
+WITH_IMAGE_LABELS: True  # for co-training
+OUTPUT_DIR: "final/IF_+_E_s_T_PLFT"
+TEST:
+  DETECTIONS_PER_IMAGE: 300  # default 300
+  AUG:
+    MIN_SIZES: (224, 488, 672, 702, 800, 896, 1008, 1344, 1792)  # IF_+_E_s_T_PLFT
+    MAX_SIZE: 3000
+    FLIP: False  # default True
+
+SEED: 56421686
+MODEL_EMA: True  # default False
+TTA: True # default False
